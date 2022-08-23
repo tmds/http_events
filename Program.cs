@@ -4,7 +4,9 @@ using System.Text;
 using var eventSourceListener = new EventSourceCreatedListener();
 
 using var httpEventListener = new EventSourceListener("System.Net.Http");
-using var httpEventListenerInternal = new EventSourceListener("Private.InternalDiagnostics.System.Net.Http");
+using var httpEventInternalListener = new EventSourceListener("Private.InternalDiagnostics.System.Net.Http");
+using var socketEventListener = new EventSourceListener("System.Net.Sockets");
+using var socketDiagnosticsListener = new EventSourceListener("Private.InternalDiagnostics.System.Net.Sockets");
 
 var client = new HttpClient();
 
@@ -55,6 +57,11 @@ sealed class EventSourceListener : EventListener
             _messageBuilder.Append(eventData.EventName);
             _messageBuilder.Append(" : ");
             _messageBuilder.AppendJoin(',', eventData.Payload);
+            if (eventData.EventName == "DumpBuffer" && eventData.Payload[2] is byte[] buffer)
+            {
+                _messageBuilder.Append(" DumpBuffer: ");
+                _messageBuilder.Append(Encoding.UTF8.GetString(buffer.AsSpan(0, 128)));
+            }
             _messageBuilder.AppendLine(" ->");
             message = _messageBuilder.ToString();
             _messageBuilder.Clear();
